@@ -1,0 +1,333 @@
+<ng-template #actions>
+  <div class="actions-container">
+    <div class="actions-left">
+      <!-- Filtros irían aquí -->
+    </div>
+    <div class="actions-right">
+      <button class="action-btn primary" (click)="addAccount()" [disabled]="sidePanel.visible">
+        Agregar Cuenta
+      </button>
+    </div>
+  </div>
+</ng-template>
+
+<div class="plan-cuentas-container" [class.with-side-panel]="sidePanel.visible">
+  <div class="page-container">
+    <div class="cuentas-list">
+      @for (account of filteredAccounts; track account.code) {
+      <div class="account-wrapper">
+        <div
+          class="cuenta-item"
+          [class.has-children]="account.children && account.children.length > 0"
+          [style.margin-left.rem]="0"
+          (click)="toggleAccount(account)"
+          (contextmenu)="onContextMenu($event, account)"
+        >
+          <span class="cuenta-codigo">{{ account.code }}</span>
+          <span class="cuenta-nombre">{{ account.name }}</span>
+          @if (account.children && account.children.length > 0) {
+          <button class="toggle-btn">
+            {{ account.expanded ? '−' : '+' }}
+          </button>
+          }
+        </div>
+        @if (account.expanded && account.children) {
+        <div class="children-wrapper">
+          @for (child of account.children; track child.code) {
+          <ng-container
+            [ngTemplateOutlet]="accountTemplate"
+            [ngTemplateOutletContext]="{ account: child, level: 1 }"
+          >
+          </ng-container>
+          }
+        </div>
+        }
+      </div>
+      }
+    </div>
+  </div>
+
+  <!-- Side Panel -->
+  @if (sidePanel.visible) {
+  <div class="side-panel">
+    <div class="side-panel-header">
+      <h3>
+        @if (sidePanel.mode === 'add') {
+          Agregar Cuenta
+        } @else if (sidePanel.mode === 'edit') {
+          Modificar Cuenta
+        } @else if (sidePanel.mode === 'delete') {
+          Plan de cuentas a eliminar
+        }
+      </h3>
+      <button class="close-btn" (click)="closeSidePanel()">✕</button>
+    </div>
+
+    <div class="side-panel-body">
+      @if (sidePanel.mode === 'delete') {
+      <!-- Delete Panel Content -->
+      <div class="delete-panel-content">
+        <p class="delete-warning">
+          Se eliminará la cuenta principal y todas sus subcuentas:
+        </p>
+        <div class="accounts-to-delete-list">
+          @for (account of deletePanelData.accountsToDelete; track account.code) {
+          <div class="account-delete-item">
+            <span class="account-delete-code">{{ account.code }}</span>
+            <span class="account-delete-name">{{ account.name }}</span>
+          </div>
+          }
+        </div>
+      </div>
+      } @else {
+      <!-- Form Content -->
+      <div class="form-group">
+        <label for="group">Grupo (Cuenta Padre)</label>
+        <div class="group-search-container">
+          <input
+            id="group"
+            type="text"
+            [(ngModel)]="groupSearch.query"
+            (focus)="onGroupSearchFocus()"
+            (input)="onGroupSearchInput()"
+            placeholder="Buscar por código o nombre..."
+            autocomplete="off"
+            [disabled]="sidePanel.mode === 'edit' || sidePanel.parentAccount !== null"
+          />
+          @if (groupSearch.query && sidePanel.mode !== 'edit' && sidePanel.parentAccount === null) {
+          <button type="button" class="clear-btn" (click)="clearGroupSelection()">✕</button>
+          }
+          @if (groupSearch.showDropdown && groupSearch.results.length > 0) {
+          <div class="group-dropdown">
+            @for (account of groupSearch.results; track account.code) {
+            <button type="button" class="group-item" (click)="selectGroup(account)">
+              <span class="group-code">{{ account.code }}</span>
+              <span class="group-name">{{ account.name }}</span>
+            </button>
+            }
+          </div>
+          }
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="code">Código *</label>
+        <input
+          id="code"
+          type="text"
+          [(ngModel)]="sidePanel.formData.code"
+          placeholder="Ej: 1.1.01"
+          readonly
+          class="readonly-input"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="name">Nombre *</label>
+        <input
+          id="name"
+          type="text"
+          [(ngModel)]="sidePanel.formData.name"
+          placeholder="Ej: Caja General"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="type">Tipo</label>
+        <div class="type-search-container">
+          <input
+            id="type"
+            type="text"
+            [(ngModel)]="typeSearch.query"
+            (focus)="onTypeSearchFocus()"
+            (input)="onTypeSearchInput()"
+            placeholder="Buscar tipo..."
+            autocomplete="off"
+          />
+          @if (typeSearch.query) {
+          <button type="button" class="clear-btn" (click)="clearTypeSelection()">✕</button>
+          }
+          @if (typeSearch.showDropdown && typeSearch.results.length > 0) {
+          <div class="type-dropdown">
+            @for (type of typeSearch.results; track type) {
+            <button type="button" class="type-item" (click)="selectType(type)">
+              {{ type }}
+            </button>
+            }
+          </div>
+          }
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="ajusta">Ajusta</label>
+        <div class="adjust-search-container">
+          <input
+            id="ajusta"
+            type="text"
+            [(ngModel)]="adjustSearch.query"
+            (focus)="onAdjustSearchFocus()"
+            (input)="onAdjustSearchInput()"
+            placeholder="Seleccionar opción..."
+            autocomplete="off"
+          />
+          @if (adjustSearch.query) {
+          <button type="button" class="clear-btn" (click)="clearAdjustSelection()">✕</button>
+          }
+          @if (adjustSearch.showDropdown && adjustSearch.results.length > 0) {
+          <div class="adjust-dropdown">
+            @for (option of adjustSearch.results; track option) {
+            <button type="button" class="adjust-item" (click)="selectAdjust(option)">
+              {{ option }}
+            </button>
+            }
+          </div>
+          }
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="capitulo">Capítulo</label>
+        <div class="capitulo-search-container">
+          <input
+            id="capitulo"
+            type="text"
+            [(ngModel)]="capituloSearch.query"
+            (focus)="onCapituloSearchFocus()"
+            (input)="onCapituloSearchInput()"
+            placeholder="Seleccionar capítulo..."
+            autocomplete="off"
+          />
+          @if (capituloSearch.query) {
+          <button type="button" class="clear-btn" (click)="clearCapituloSelection()">✕</button>
+          }
+          @if (capituloSearch.showDropdown && capituloSearch.results.length > 0) {
+          <div class="capitulo-dropdown">
+            @for (option of capituloSearch.results; track option) {
+            <button type="button" class="capitulo-item" (click)="selectCapitulo(option)">
+              {{ option }}
+            </button>
+            }
+          </div>
+          }
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="imputacion">Imputación a centros de costos</label>
+        <div class="imputacion-search-container">
+          <input
+            id="imputacion"
+            type="text"
+            [(ngModel)]="imputacionSearch.query"
+            (focus)="onImputacionSearchFocus()"
+            (input)="onImputacionSearchInput()"
+            placeholder="Seleccionar opción..."
+            autocomplete="off"
+          />
+          @if (imputacionSearch.query) {
+          <button type="button" class="clear-btn" (click)="clearImputacionSelection()">✕</button>
+          }
+          @if (imputacionSearch.showDropdown && imputacionSearch.results.length > 0) {
+          <div class="imputacion-dropdown">
+            @for (option of imputacionSearch.results; track option) {
+            <button type="button" class="imputacion-item" (click)="selectImputacion(option)">
+              {{ option }}
+            </button>
+            }
+          </div>
+          }
+        </div>
+      </div>
+      }
+    </div>
+
+    <div class="side-panel-footer">
+      @if (sidePanel.mode === 'delete') {
+      <button class="form-btn secondary" (click)="closeSidePanel()">Cancelar</button>
+      <button class="form-btn danger" (click)="onConfirmDeleteFromPanel()">Eliminar</button>
+      } @else {
+      <button class="form-btn secondary" (click)="onCancelForm()">Cancelar</button>
+      <button class="form-btn primary" (click)="onConfirmForm()" [disabled]="!isFormValid()">
+        {{ sidePanel.mode === 'add' ? 'Agregar' : 'Guardar' }}
+      </button>
+      }
+    </div>
+  </div>
+  }
+</div>
+
+<ng-template #accountTemplate let-account="account" let-level="level">
+  <div class="account-wrapper">
+    <div
+      class="cuenta-item"
+      [class.has-children]="account.children && account.children.length > 0 && account.expanded"
+      [style.margin-left.rem]="level * 2"
+      (click)="toggleAccount(account)"
+      (contextmenu)="onContextMenu($event, account)"
+    >
+      <span class="cuenta-codigo">{{ account.code }}</span>
+      <span class="cuenta-nombre">{{ account.name }}</span>
+      @if (account.children && account.children.length > 0) {
+      <button class="toggle-btn">
+        {{ account.expanded ? '−' : '+' }}
+      </button>
+      }
+    </div>
+    @if (account.expanded && account.children) {
+    <div class="children-wrapper">
+      @for (child of account.children; track child.code) {
+      <ng-container
+        [ngTemplateOutlet]="accountTemplate"
+        [ngTemplateOutletContext]="{ account: child, level: level + 1 }"
+      >
+      </ng-container>
+      }
+    </div>
+    }
+  </div>
+</ng-template>
+
+<!-- Context Menu -->
+@if (contextMenu.visible) {
+<div class="context-menu" [style.left.px]="contextMenu.x" [style.top.px]="contextMenu.y">
+  <button class="context-menu-item" (click)="onAddSubAccount()">+ Agregar</button>
+  <button
+    class="context-menu-item"
+    (click)="onEditAccount()"
+    [disabled]="contextMenu.account?.isDefault"
+    [class.disabled]="contextMenu.account?.isDefault">
+    ✏️ Modificar
+  </button>
+  <button
+    class="context-menu-item danger"
+    (click)="onDeleteAccount()"
+    [disabled]="contextMenu.account?.isDefault"
+    [class.disabled]="contextMenu.account?.isDefault">
+    🗑️ Eliminar
+  </button>
+</div>
+}
+
+<!-- Confirm Modal -->
+@if (confirmModal.visible) {
+<div class="modal-overlay">
+  <div class="modal-container">
+    <div class="modal-header">
+      <h3>Confirmación</h3>
+    </div>
+    <div class="modal-body">
+      <p>{{ confirmModal.message }}</p>
+    </div>
+    <div class="modal-footer">
+      @if (confirmModal.type === 'cancel') {
+      <button class="modal-btn secondary" (click)="onContinueEditing()">No, Continuar</button>
+      <button class="modal-btn primary" (click)="onConfirmCancel()">Sí, Cancelar</button>
+      } @else if (confirmModal.type === 'delete') {
+      <button class="modal-btn secondary" (click)="onContinueEditing()">No, Cancelar</button>
+      <button class="modal-btn danger" (click)="onConfirmCancel()">Sí, Eliminar</button>
+      }
+    </div>
+  </div>
+</div>
+}

@@ -1,0 +1,103 @@
+<div class="top-layout-container">
+  <!-- Row 1: Header - Logo + Title + Search + Actions -->
+  <header class="header">
+    <div class="header-left">
+      <div class="header-logo">
+        <h2>Eximia</h2>
+      </div>
+      <div class="header-title">
+        <h1>{{ title() }}</h1>
+      </div>
+    </div>
+    <div class="header-search">
+      <input
+        class="search-input"
+        name="search"
+        type="text"
+        [placeholder]="searchService.placeholder()"
+        [(ngModel)]="searchQuery"
+        (input)="onSearchInput()"
+      />
+    </div>
+    <div class="header-actions">
+      <button class="action-btn" title="Cambiar diseño" (click)="switchLayout()">⚙️</button>
+      <button class="action-btn" title="Perfil">👤</button>
+    </div>
+  </header>
+
+  <!-- Row 2: Topbar - Navbar -->
+  <div class="topbar">
+    <!-- Navigation Section -->
+    <nav class="topbar-navbar">
+      <ul class="navbar-list">
+        @for (item of menuItems; track item.label) {
+        <li class="navbar-item" [class.has-dropdown]="hasChildren(item)">
+          <!-- Menú sin hijos (link directo) -->
+          @if (!hasChildren(item)) {
+          <a
+            class="navbar-link"
+            [routerLink]="item.route"
+            routerLinkActive="active"
+            (click)="closeAllMenus()"
+            [title]="item.label"
+          >
+            @if (item.icon) {
+            <span class="menu-icon">{{ item.icon }}</span>
+            }
+            <span class="menu-label">{{ item.label }}</span>
+          </a>
+          }
+
+          <!-- Menú con hijos (dropdown) -->
+          @if (hasChildren(item)) {
+          <button
+            class="navbar-toggle"
+            (click)="toggleMenu(item)"
+            [class.expanded]="isExpanded(item)"
+            [class.has-active-child]="hasActiveChild(item)"
+            [title]="item.label"
+          >
+            @if (item.icon) {
+            <span class="menu-icon">{{ item.icon }}</span>
+            }
+            <span class="menu-label">{{ item.label }}</span>
+            <span class="dropdown-arrow">{{ isExpanded(item) ? '▲' : '▼' }}</span>
+          </button>
+
+          @if (isExpanded(item)) {
+          <ul class="dropdown-menu">
+            @for (child of item.children; track child.label) {
+            <li>
+              <a
+                class="dropdown-link"
+                [routerLink]="child.route"
+                routerLinkActive="active"
+                [title]="child.label"
+              >
+                @if (child.icon) {
+                <span class="menu-icon">{{ child.icon }}</span>
+                }
+                <span class="menu-label">{{ child.label }}</span>
+              </a>
+            </li>
+            }
+          </ul>
+          } }
+        </li>
+        }
+      </ul>
+    </nav>
+  </div>
+
+  <!-- Row 3: Action Area -->
+  @if (actionsService.actions()) {
+  <div class="action-area">
+    <ng-container *ngTemplateOutlet="actionsService.actions()!" />
+  </div>
+  }
+
+  <!-- Row 4: Main Content -->
+  <main class="main-content" [class.with-actions]="actionsService.actions()">
+    <router-outlet />
+  </main>
+</div>

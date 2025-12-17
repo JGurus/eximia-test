@@ -1,0 +1,123 @@
+<div class="left-layout-container" [class.sidebar-collapsed]="sidebarCollapsed()">
+  <!-- Aside (Sidebar) -->
+  <aside class="sidebar" [class.collapsed]="sidebarCollapsed()">
+    <!-- Logo Section -->
+    <div class="sidebar-logo">
+      @if (!sidebarCollapsed()) {
+      <h2>Eximia</h2>
+      <button class="toggle-sidebar-btn" (click)="toggleSidebar()" title="Colapsar">←</button>
+      } @else {
+      <h2 class="logo-collapsed">X</h2>
+
+      }
+    </div>
+
+    <!-- Search Section -->
+    <div class="sidebar-search">
+      @if (!sidebarCollapsed()) {
+      <input
+        name="search"
+        type="text"
+        [placeholder]="searchService.placeholder()"
+        [(ngModel)]="searchQuery"
+        (input)="onSearchInput()"
+        #searchInput
+      />
+      } @else {
+      <button class="search-icon-btn" (click)="toggleSidebar(true)">🔍</button>
+      }
+    </div>
+
+    <!-- Navigation Section -->
+    <nav class="sidebar-navbar">
+      <ul>
+        @for (item of menuItems; track item.label) {
+        <li [class.menu-item]="hasChildren(item)">
+          <!-- Menú sin hijos (link directo) -->
+          @if (!hasChildren(item)) {
+          <a
+            [routerLink]="item.route"
+            routerLinkActive="active"
+            (click)="closeAllMenus()"
+            [title]="item.label"
+          >
+            @if (item.icon) {
+            <span class="menu-icon">{{ item.icon }}</span>
+            } @if (!sidebarCollapsed()) {
+            <span class="menu-label">{{ item.label }}</span>
+            }
+          </a>
+          }
+
+          <!-- Menú con hijos (expandible) -->
+          @if (hasChildren(item)) {
+          <button
+            class="menu-toggle"
+            (click)="toggleMenu(item)"
+            [class.expanded]="isExpanded(item)"
+            [class.has-active-child]="hasActiveChild(item)"
+            [title]="item.label"
+          >
+            <span class="menu-toggle-content">
+              @if (item.icon) {
+              <span class="menu-icon">{{ item.icon }}</span>
+              } @if (!sidebarCollapsed()) {
+              <span class="menu-label">{{ item.label }}</span>
+              }
+            </span>
+            @if (!sidebarCollapsed()) {
+            <span class="arrow">{{ isExpanded(item) ? '▼' : '▶' }}</span>
+            }
+          </button>
+
+          @if (isExpanded(item) && !sidebarCollapsed()) {
+          <ul class="submenu">
+            @for (child of item.children; track child.label) {
+            <li>
+              <a [routerLink]="child.route" routerLinkActive="active" [title]="child.label">
+                @if (child.icon) {
+                <span class="menu-icon">{{ child.icon }}</span>
+                }
+                <span class="menu-label">{{ child.label }}</span>
+              </a>
+            </li>
+            }
+          </ul>
+          } }
+        </li>
+        }
+      </ul>
+    </nav>
+  </aside>
+
+  <!-- Header -->
+  <header class="header">
+    @if (sidebarCollapsed()) {
+    <button class="toggle-sidebar-btn expanded" (click)="toggleSidebar()" title="Expandir">
+      →
+    </button>
+    }
+    <div class="header-title">
+      @if (onBack()) {
+      <button class="back-button" (click)="handleBack()">← Volver</button>
+      }
+      <h1>{{ title() }}</h1>
+    </div>
+    <div class="header-shortcuts">
+      <button title="Cambiar diseño" (click)="switchLayout()">⚙️</button>
+      <button title="Perfil">👤</button>
+    </div>
+  </header>
+
+  <!-- Action Area -->
+  @if (actionsService.actions()) {
+  <div class="action-area">
+    <ng-container *ngTemplateOutlet="actionsService.actions()!" />
+  </div>
+  }
+
+  <!-- Main Content -->
+  <main class="main-content" [class.with-actions]="actionsService.actions()">
+    <router-outlet />
+  </main>
+</div>
